@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Puo Chat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#e9f1f8;--panel:#fff;--ink:#14202B;--muted:#5d6f80;--blue:#75AADB;--sent:#cfe4f6;--recv:#fff;--line:#d5e1ec;--head:#0d1319;--chip:#f2f7fb;color-scheme:light;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e161d;--panel:#16212b;--ink:#e8eff5;--muted:#8fa3b5;--sent:#24465f;--recv:#1d2a35;--line:#26343f;--head:#070b0f;--chip:#1d2a35;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e161d;--panel:#16212b;--ink:#e8eff5;--muted:#8fa3b5;--sent:#24465f;--recv:#1d2a35;--line:#26343f;--head:#070b0f;--chip:#1d2a35;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font-family:"Outfit",system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);font-size:16px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--head);z-index:10}
+.app{height:100%;display:grid;grid-template-columns:340px 1fr;max-width:1100px;margin:0 auto;background:var(--panel)}
+.side,.chat{display:flex;flex-direction:column;min-height:0;min-width:0}
+.side{border-right:1px solid var(--line)}
+.brand{background:var(--head);color:#fff;padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between}
+.brand h1{margin:0;font-size:22px;font-weight:700;letter-spacing:.2px}
+.brand small{display:block;color:#9fb9d1;font-weight:400;font-size:13px}
+.flag{height:14px;background:linear-gradient(#75AADB 0 28%,#fff 28% 38%,#000 38% 62%,#fff 62% 72%,#75AADB 72%)}
+.lang{display:flex;border:1px solid #3b4b5a;border-radius:20px;overflow:hidden}
+.lang button{background:none;border:0;color:#cfe0ef;padding:6px 11px;font:inherit;font-size:13px;cursor:pointer}
+.lang button[aria-pressed="true"]{background:var(--blue);color:#0d1319;font-weight:700}
+.list{overflow-y:auto;flex:1}
+.row{display:flex;gap:12px;padding:12px 16px;align-items:center;cursor:pointer;border:0;background:none;width:100%;text-align:left;font:inherit;color:inherit;border-bottom:1px solid var(--line)}
+.row:hover,.row.on{background:var(--chip)}
+.av{flex:none;width:46px;height:46px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:700;font-size:17px}
+.meta{min-width:0;flex:1}
+.meta b{display:flex;justify-content:space-between;font-weight:500}
+.meta b span{font-size:12px;color:var(--muted);font-weight:400}
+.meta p{margin:2px 0 0;color:var(--muted);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chead{background:var(--head);color:#fff;display:flex;align-items:center;gap:10px;padding:10px 12px}
+.chead .t{flex:1;min-width:0}
+.chead .t b{display:block;font-weight:500}
+.chead .t small{color:#9fb9d1}
+.ic{background:none;border:1px solid #3b4b5a;color:#fff;border-radius:18px;padding:7px 12px;font:inherit;font-size:13px;cursor:pointer}
+.back{display:none;font-size:22px;border:0;padding:4px 8px}
+.msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:6px;background:var(--bg)}
+.b{max-width:78%;padding:8px 12px;border-radius:14px;line-height:1.35;overflow-wrap:anywhere}
+.b i{display:block;font-style:normal;font-size:11px;color:var(--muted);text-align:right;margin-top:2px}
+.in{align-self:flex-start;background:var(--recv);border-bottom-left-radius:4px}
+.out{align-self:flex-end;background:var(--sent);border-bottom-right-radius:4px}
+.note{align-self:center;max-width:92%;background:var(--panel);border:1px solid var(--blue);border-left-width:5px;padding:10px 12px;border-radius:8px;font-size:14px}
+.note b{display:block;margin-bottom:4px}
+.chips{display:flex;gap:8px;padding:8px 12px 0;overflow-x:auto;background:var(--panel)}
+.chips button{flex:none;border:1px solid var(--blue);background:var(--chip);color:var(--ink);border-radius:18px;padding:6px 12px;font:inherit;font-size:14px;cursor:pointer}
+.send{display:flex;gap:8px;padding:10px 12px;background:var(--panel)}
+.send input{flex:1;min-width:0;border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:22px;padding:11px 16px;font:inherit}
+.send button{border:0;background:var(--blue);color:#0d1319;font:inherit;font-weight:700;border-radius:22px;padding:0 20px;cursor:pointer}
+.empty{margin:auto;color:var(--muted);text-align:center;padding:20px}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.tabs{display:flex;background:var(--head)}
+.tabs button{flex:1;background:none;border:0;border-bottom:3px solid transparent;color:#9fb9d1;font:inherit;padding:10px 4px;cursor:pointer}
+.tabs button[aria-selected="true"]{color:#fff;border-bottom-color:var(--blue);font-weight:700}
+.sec{padding:8px 16px;color:var(--muted);font-size:13px;background:var(--chip)}
+.ring{flex:none;padding:3px;border-radius:50%;border:3px solid var(--blue)}
+.ring.seen{border-color:var(--line)}
+.ring .av{width:42px;height:42px}
+.miss{color:#d64545}.ok{color:#2e9d5b}
+.cbtn{flex:none;border:0;background:none;font-size:20px;cursor:pointer;padding:8px}
+.ic.sq{padding:7px 9px}
+.ov{position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;align-items:center;padding:calc(16px + env(safe-area-inset-top,0px)) 16px calc(16px + env(safe-area-inset-bottom,0px));color:#fff}
+.story{justify-content:space-between}
+.top{width:100%;max-width:560px}
+.bars{display:flex;gap:4px;width:100%}
+.bars span{flex:1;height:3px;background:rgba(255,255,255,.35);border-radius:2px;overflow:hidden}
+.bars em{display:block;height:100%;width:0;background:#fff}
+.bars .full em{width:100%}
+.bars em.run{animation:fill 4s linear forwards}
+@keyframes fill{to{width:100%}}
+.shead{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+.stext{font-size:28px;font-weight:500;text-align:center;max-width:520px;overflow-wrap:anywhere}
+.story textarea{background:none;border:0;color:#fff;font:inherit;font-size:28px;text-align:center;width:100%;max-width:520px;height:40%;resize:none}
+.story textarea::placeholder{color:rgba(255,255,255,.75)}
+.sw{display:flex;gap:12px;justify-content:center;margin-bottom:14px}
+.sw button{width:34px;height:34px;border-radius:50%;border:2px solid #fff;cursor:pointer}
+.post{background:#fff;color:#14202B;border:0;border-radius:22px;padding:12px 28px;font:inherit;font-weight:700;cursor:pointer}
+.call{background:linear-gradient(#14202B,#0d1319);justify-content:center;gap:8px;text-align:center}
+.big{width:120px;height:120px;font-size:44px}
+.call h2{margin:10px 0 0;font-weight:500}
+.call p{margin:0;color:#9fb9d1}
+.call small{color:#6f879d;margin-top:6px}
+.self{position:absolute;right:16px;top:calc(16px + env(safe-area-inset-top,0px));width:90px;height:130px;border-radius:12px;background:#2a3947;display:grid;place-items:center;color:#9fb9d1}
+.cbar{display:flex;gap:16px;margin-top:40px}
+.cb{width:60px;height:60px;border-radius:50%;border:0;background:#2a3947;font-size:22px;color:#fff;cursor:pointer}
+.cb.off{background:#fff;color:#14202B}
+.cb.end{background:#d64545;font-size:15px;width:auto;border-radius:30px;padding:0 22px}
+.panel{background:var(--panel);color:var(--ink);align-items:stretch;padding:0}
+.ph{background:var(--head);color:#fff;display:flex;align-items:center;gap:10px;padding:calc(12px + env(safe-area-inset-top,0px)) 12px 12px}
+.pb{flex:1;overflow-y:auto;padding:16px 16px calc(24px + env(safe-area-inset-bottom,0px));max-width:560px;width:100%;margin:0 auto}
+.fld{display:block;margin-bottom:16px}
+.fld span{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
+.fld input,.fld select{width:100%;border:0;border-bottom:2px solid var(--blue);background:var(--chip);color:var(--ink);font:inherit;padding:10px;border-radius:6px 6px 0 0}
+.err{color:#d64545;font-size:13px;min-height:20px;margin:0 0 8px}
+.qa{border:1px solid var(--blue);background:var(--chip);color:var(--ink);border-radius:16px;padding:5px 10px;font:inherit;font-size:13px;cursor:pointer}
+.qs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.save{background:var(--blue);color:#0d1319;border:0;border-radius:22px;padding:12px 28px;font:inherit;font-weight:700;cursor:pointer}
+.tgl{display:flex;justify-content:space-between;align-items:center;width:100%;border:0;background:none;color:inherit;font:inherit;padding:14px 0;border-bottom:1px solid var(--line);cursor:pointer;text-align:left}
+.tgl i{width:42px;height:24px;border-radius:12px;background:var(--line);position:relative;flex:none}
+.tgl i::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .15s}
+.tgl[aria-checked="true"] i{background:var(--blue)}
+.tgl[aria-checked="true"] i::after{left:21px}
+.pb p{color:var(--muted);line-height:1.5}
+@media (max-width:720px){
+.app{grid-template-columns:1fr}
+.chat{display:none}
+.app.open .side{display:none}
+.app.open .chat{display:flex}
+.back{display:block}
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <section class="side">
+    <div class="brand"><h1>Puo Chat<small>Made in Botswana</small></h1>
+      <div class="lang" role="group" aria-label="Language">
+        <button id="en" aria-pressed="true">English</button><button id="tn" aria-pressed="false">Setswana</button>
+      </div></div>
+    <div class="flag"></div>
+    <div class="tabs" role="tablist"><button id="tab-chats" role="tab" aria-selected="true"></button><button id="tab-status" role="tab" aria-selected="false"></button><button id="tab-calls" role="tab" aria-selected="false"></button><button id="tab-settings" role="tab" aria-selected="false"></button></div>
+    <div class="list" id="list"></div>
+  </section>
+  <section class="chat" id="chat">
+    <div class="empty" id="empty">Pick a chat to start.<br>Try Pula Assistant for the AI features.</div>
+  </section>
+</div>
+<script>
+var $=function(s){return document.querySelector(s)};
+var lang="en",cur=null;
+var UI={en:{ph:"Type a message",send:"Send",sum:"Summarize chat",typing:"typing…",online:"online"},
+        tn:{ph:"Kwala molaetsa",send:"Romela",sum:"Akaretsa dipolelo",typing:"o a kwala…",online:"online"}};
+var C=[
+ {id:"ai",n:"Pula Assistant",ph:"AI helper",col:"#14202B",ai:1,m:[["in","Dumela! I’m your AI helper. Ask me to convert money (try 100 usd), translate greetings, or give travel tips.","08:00"]]},
+ {id:"kg",n:"Kagiso Moeng",ph:"+267 71 234 567",col:"#2f6f9f",m:[["in","Dumela! Le kae? Are you coming to Gaborone this weekend?","09:12"]]},
+ {id:"nm",n:"Neo Mosweu",ph:"+267 72 345 678",col:"#8a5a2b",m:[["in","Please send P150 on Orange Money for the tickets.","08:40"]]},
+ {id:"th",n:"Thabo Seretse",ph:"+267 73 456 789",col:"#3d7a4a",m:[["in","Are we still meeting at Maun airport at 3?","07:55"]]},
+ {id:"mp",n:"Mpho Kgosi",ph:"+267 74 567 890",col:"#9a3b5c",m:[["in","The combi to Francistown leaves at 6. Don’t be late!","Yesterday"]]}
+];
+var R={en:{greet:["Hey! I’m good, and you?","Hello! All fine here."],thanks:["No problem!","Anytime."],money:["Got it, thank you!","Received, ke a leboga."],def:["Okay, noted.","Sounds good to me.","Let me check and get back to you."]},
+ tn:{greet:["Dumela! Ke teng, wena o tsogile jang?","Ee, ke teng. Le kae kwa gae?"],thanks:["Ga go na mathata!","Ke a leboga le wena."],money:["Ke e amogetse, ke a leboga!","Go siame, ke a bona."],def:["Go siame, ke a utlwa.","Ke a go tlhaloganya.","A re bue moragonyana."]}};
+var SR={en:{q:["Fine, thanks! And you?","Call me later","Okay, sounds good"],money:["Sent!","Send me your number","I’ll pay tomorrow"],time:["See you then","Running late","Can we move it?"]},
+ tn:{q:["Ke teng, wena?","Ntlhaeletse moragonyana","Go siame"],money:["Ke romile!","Ntlhaeletse nomoro","Ke tla duela kamoso"],time:["Re tla bonana","Ke dibetse","A re fetoleng nako?"]}};
+function now(){var d=new Date();return ("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2)}
+function pick(a){return a[Math.floor(Math.random()*a.length)]}
+function el(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
+function get(id){return C.filter(function(c){return c.id===id})[0]}
+function ini(n){return n.split(" ").map(function(w){return w[0]}).join("").slice(0,2)}
+
+function drawChats(){
+  var l=$("#list");l.textContent="";
+  C.forEach(function(c){
+    var last=c.m[c.m.length-1],r=el("button","row"+(cur===c.id?" on":""));
+    var a=el("div","av",c.ai?"AI":ini(c.n));a.style.background=c.col;
+    var m=el("div","meta"),b=el("b",null,c.n);b.appendChild(el("span",null,last[2]));
+    m.appendChild(b);m.appendChild(el("p",null,(last[0]==="out"?"✓✓ ":"")+last[1]));
+    r.appendChild(a);r.appendChild(m);
+    r.onclick=function(){cur=c.id;$("#app").classList.add("open");drawList();drawChat()};
+    l.appendChild(r);
+  });
+}
+
+function drawChat(){
+  var c=get(cur),u=UI[lang],ch=$("#chat");ch.textContent="";
+  var h=el("div","chead"),bk=el("button","ic back","‹");bk.setAttribute("aria-label","Back");
+  bk.onclick=function(){$("#app").classList.remove("open")};
+  var a=el("div","av",c.ai?"AI":ini(c.n));a.style.background=c.col;a.style.width=a.style.height="40px";
+  var t=el("div","t"),nm=el("b",null,c.n),st=el("small",null,u.online+" · "+c.ph);st.id="status";
+  t.appendChild(nm);t.appendChild(st);
+  var sb=el("button","ic sq","✨");sb.setAttribute("aria-label",u.sum);sb.title=u.sum;sb.onclick=summarize;
+  h.appendChild(bk);h.appendChild(a);h.appendChild(t);if(!c.ai){["voice","video"].forEach(function(k){var b=el("button","ic sq",k==="voice"?"📞":"🎥");b.setAttribute("aria-label",k+" call");b.onclick=function(){startCall(c.id,k)};h.appendChild(b)})}h.appendChild(sb);
+  var ms=el("div","msgs");ms.id="msgs";
+  var chips=el("div","chips");chips.id="chips";
+  var f=el("div","send"),inp=el("input");inp.id="inp";inp.placeholder=u.ph;inp.setAttribute("aria-label",u.ph);inp.autocomplete="off";
+  var sd=el("button",null,u.send);
+  function go(){var v=inp.value.trim();if(v){inp.value="";send(v)}}
+  sd.onclick=go;inp.onkeydown=function(e){if(e.key==="Enter")go()};
+  f.appendChild(inp);f.appendChild(sd);
+  ch.appendChild(h);ch.appendChild(ms);ch.appendChild(chips);ch.appendChild(f);
+  c.m.forEach(function(m){bubble(m)});
+  if(c.notes)c.notes.forEach(function(n){note(n[0],n[1])});
+  drawChips();ms.scrollTop=ms.scrollHeight;
+}
+
+function bubble(m){
+  var d=el("div","b "+m[0],m[1]);d.appendChild(el("i",null,m[2]+(m[0]==="out"?(priv.receipts?" ✓✓":" ✓"):"")));
+  var ms=$("#msgs");ms.appendChild(d);ms.scrollTop=ms.scrollHeight;
+}
+function note(title,body){
+  var d=el("div","note");d.appendChild(el("b",null,title));d.appendChild(document.createTextNode(body));
+  var ms=$("#msgs");ms.appendChild(d);ms.scrollTop=ms.scrollHeight;
+}
+
+function drawChips(){
+  var c=get(cur),box=$("#chips");box.textContent="";
+  var ins=c.m.filter(function(m){return m[0]==="in"});
+  if(!ins.length||c.ai)return;
+  var t=ins[ins.length-1][1].toLowerCase(),set=SR[lang].q;
+  if(/p\s?\d+|orange|myzaka|pula/.test(t))set=SR[lang].money;
+  else if(/\bat \d|leaves|meeting|\d{1,2}:\d\d/.test(t))set=SR[lang].time;
+  set.forEach(function(s){var b=el("button",null,s);b.onclick=function(){send(s)};box.appendChild(b)});
+}
+
+function send(text){
+  var c=get(cur),id=c.id,tm=now();
+  c.m.push(["out",text,tm]);bubble(["out",text,tm]);$("#chips").textContent="";drawList();
+  var st=$("#status");if(st)st.textContent=UI[lang].typing;
+  setTimeout(function(){
+    var r=c.ai?assistant(text):reply(text);
+    c.m.push(["in",r,now()]);
+    if(cur===id){bubble(["in",r,now()]);drawChips();var s=$("#status");if(s)s.textContent=UI[lang].online+" · "+c.ph}
+    drawList();
+  },1100);
+}
+
+function reply(x){
+  var t=x.toLowerCase(),p=R[lang];
+  if(/dumela|hello|\bhi\b|\bhey\b|le kae/.test(t))return pick(p.greet);
+  if(/thank|leboga|ka kopo/.test(t))return pick(p.thanks);
+  if(/\bp\s?\d+|sent|romile|orange/.test(t))return pick(p.money);
+  return pick(p.def);
+}
+
+function assistant(x){
+  var t=x.toLowerCase(),m=t.match(/(\d+(?:\.\d+)?)\s*(usd|dollars?|\$|zar|rand)/);
+  if(m){var n=parseFloat(m[1]),usd=/usd|dollar|\$/.test(m[2]),v=n*(usd?13.5:0.75);
+    return n+(usd?" USD":" ZAR")+" ≈ P"+v.toFixed(2)+" (demo rate, check your bank for today’s rate).";}
+  if(/hello|hi\b|greet|dumela/.test(t))return "Dumela rra / Dumela mma = hello to one person. Dumelang = hello to a group. Reply with “Ke teng, wena?” (I’m fine, and you?).";
+  if(/thank|leboga/.test(t))return "Ke a leboga = thank you. Ke a leboga thata = thank you very much.";
+  if(/bye|goodbye|sala|tsamaya/.test(t))return "Sala sentle = stay well (said by the one leaving). Tsamaya sentle = go well (said to the one leaving).";
+  if(/combi|bus|taxi|travel|transport/.test(t))return "Travel tip: combis leave from the main rank when full. Ask the fare before you board and carry small pula notes for change.";
+  return "I can convert money (try “50 usd”), translate greetings (“how do I say hello”), or give combi travel tips.";
+}
+
+function summarize(){
+  var c=get(cur);if(c.ai)return;
+  var all=c.m.map(function(m){return m[1]}).join(" "),
+  money=(all.match(/P\s?\d+/g)||[]),
+  places=["Gaborone","Francistown","Maun","Palapye","Kasane","Serowe","Lobatse","Molepolole"].filter(function(p){return all.indexOf(p)>-1}),
+  qs=c.m.filter(function(m){return m[0]==="in"&&/\?|please|kopa/i.test(m[1])}),
+  out=c.m.filter(function(m){return m[0]==="out"}).length,
+  s=c.m.length+" messages ("+out+" from you). ";
+  if(places.length)s+="Places: "+places.join(", ")+". ";
+  if(money.length)s+="Money mentioned: "+money.join(", ")+". ";
+  if(/combi|airport|leaves|at \d/i.test(all))s+="Travel or timing is being planned. ";
+  s+=qs.length?"Open request: “"+qs[qs.length-1][1]+"”":"Nothing waiting for a reply.";
+  c.notes=(c.notes||[]).concat([[lang==="tn"?"Kakaretso ya AI":"AI summary",s]]);
+  note(lang==="tn"?"Kakaretso ya AI":"AI summary",s);
+}
+
+function setLang(l){
+  lang=l;labelTabs();drawSide();$("#en").setAttribute("aria-pressed",l==="en");$("#tn").setAttribute("aria-pressed",l==="tn");
+  if(cur)drawChat();
+}
+var tab="chats",seen={},myStatus=[];
+var ST=[
+ {id:"kg",items:[["Pula! ☔ Finally rain in Gaborone","#2f6f9f","07:10"],["Sunset over the Okavango Delta 🌅","#b5651d","09:40"]]},
+ {id:"th",items:[["Weekend in Maun ✈️ who is coming?","#3d7a4a","06:30"]]},
+ {id:"mp",items:[["Combi rank at 5am… ke tsogile 😴","#9a3b5c","05:05"]]}
+];
+var CALLS=[
+ {id:"kg",dir:"in",miss:0,kind:"voice",when:"Today, 09:30",dur:"4:12"},
+ {id:"nm",dir:"in",miss:1,kind:"voice",when:"Today, 08:15",dur:""},
+ {id:"th",dir:"out",miss:0,kind:"video",when:"Yesterday, 18:05",dur:"12:40"},
+ {id:"mp",dir:"in",miss:1,kind:"video",when:"Yesterday, 06:02",dur:""}
+];
+var TL={en:["Chats","Status","Calls","Settings"],tn:["Dipolelo","Boemo","Megala","Settings"]},TABS=["chats","status","calls","settings"];
+function labelTabs(){TABS.forEach(function(k,i){$("#tab-"+k).textContent=TL[lang][i]})}
+function setTab(k){tab=k;TABS.forEach(function(x){$("#tab-"+x).setAttribute("aria-selected",x===k)});drawSide()}
+function drawSide(){if(tab==="chats")drawChats();else if(tab==="status")drawStatus();else if(tab==="calls")drawCalls();else drawSettings()}
+function drawList(){if(tab==="chats")drawChats()}
+function fmt(s){return ("0"+Math.floor(s/60)).slice(-2)+":"+("0"+s%60).slice(-2)}
+function avatar(c){var a=el("div","av",ini(c.n));a.style.background=c.col;return a}
+
+function drawStatus(){
+ var l=$("#list");l.textContent="";
+ var me=el("button","row"),a=el("div","av","+");a.style.background="#14202B";
+ var m=el("div","meta");m.appendChild(el("b",null,lang==="tn"?"Boemo jwa me":"My status"));
+ m.appendChild(el("p",null,"Tap to add a status update"));
+ me.appendChild(a);me.appendChild(m);me.onclick=compose;l.appendChild(me);
+ if(myStatus.length){var v=el("button","row"),w=el("div","ring"+(seen.me?" seen":"")),av=el("div","av","Me");av.style.background="#14202B";w.appendChild(av);
+  var vm=el("div","meta");vm.appendChild(el("b",null,"View my updates"));vm.appendChild(el("p",null,myStatus.length+" posted"));
+  v.appendChild(w);v.appendChild(vm);v.onclick=function(){openStory("me")};l.appendChild(v)}
+ l.appendChild(el("div","sec","Recent updates"));
+ ST.forEach(function(s){var c=get(s.id),r=el("button","row"),w=el("div","ring"+(seen[s.id]?" seen":""));
+  w.appendChild(avatar(c));var mm=el("div","meta");mm.appendChild(el("b",null,c.n));
+  mm.appendChild(el("p",null,"Today, "+s.items[s.items.length-1][2]+" · "+s.items.length+" update"+(s.items.length>1?"s":"")));
+  r.appendChild(w);r.appendChild(mm);r.onclick=function(){openStory(s.id)};l.appendChild(r)});
+}
+
+function openStory(id){
+ var items=id==="me"?myStatus:ST.filter(function(s){return s.id===id})[0].items,name=id==="me"?"You":get(id).n,i=0,o=el("div","ov story");
+ function close(){o.remove();seen[id]=1;drawSide()}
+ function next(){if(i<items.length-1){i++;show()}else close()}
+ function prev(){if(i>0){i--;show()}}
+ function show(){
+  o.textContent="";o.style.background=items[i][1];
+  var top=el("div","top"),bars=el("div","bars");
+  items.forEach(function(_,k){var b=el("span",k<i?"full":""),f=el("em",k===i?"run":"");if(k===i)f.onanimationend=next;b.appendChild(f);bars.appendChild(b)});
+  var hd=el("div","shead"),x=el("button","ic sq","✕");x.setAttribute("aria-label","Close");x.onclick=function(e){e.stopPropagation();close()};
+  hd.appendChild(el("b",null,name+" · "+items[i][2]));hd.appendChild(x);top.appendChild(bars);top.appendChild(hd);
+  o.appendChild(top);o.appendChild(el("div","stext",items[i][0]));o.appendChild(el("div"));
+ }
+ o.onclick=function(e){e.clientX<window.innerWidth/3?prev():next()};
+ document.body.appendChild(o);show();
+}
+
+function compose(){
+ var cols=["#2f6f9f","#3d7a4a","#9a3b5c","#b5651d"],col=cols[0],o=el("div","ov story");o.style.background=col;
+ var top=el("div","top"),hd=el("div","shead"),x=el("button","ic sq","✕");x.setAttribute("aria-label","Close");x.onclick=function(){o.remove()};
+ hd.appendChild(el("b",null,lang==="tn"?"Boemo jwa me":"My status"));hd.appendChild(x);top.appendChild(hd);
+ var ta=el("textarea");ta.placeholder=lang==="tn"?"Kwala boemo jwa gago":"Type a status";ta.maxLength=120;ta.setAttribute("aria-label",ta.placeholder);
+ var bt=el("div"),sw=el("div","sw");
+ cols.forEach(function(c){var b=el("button");b.style.background=c;b.setAttribute("aria-label","Background colour");b.onclick=function(){col=c;o.style.background=c};sw.appendChild(b)});
+ var p=el("button","post",UI[lang].send);
+ p.onclick=function(){var v=ta.value.trim();if(!v)return;myStatus.push([v,col,now()]);o.remove();drawSide()};
+ bt.style.textAlign="center";bt.appendChild(sw);bt.appendChild(p);
+ o.appendChild(top);o.appendChild(ta);o.appendChild(bt);document.body.appendChild(o);ta.focus();
+}
+
+function drawCalls(){
+ var l=$("#list");l.textContent="";l.appendChild(el("div","sec","Recent"));
+ CALLS.forEach(function(k){var c=get(k.id),r=el("div","row");
+  var m=el("div","meta");m.appendChild(el("b",null,c.n));
+  var p=el("p",k.miss?"miss":"",(k.dir==="out"?"↗ ":"↙ ")+(k.miss?"Missed ":"")+k.kind+" · "+k.when+(k.dur?" · "+k.dur:""));
+  m.appendChild(p);
+  var b=el("button","cbtn",k.kind==="video"?"🎥":"📞");b.setAttribute("aria-label","Call "+c.n);b.onclick=function(){startCall(k.id,k.kind)};
+  r.appendChild(avatar(c));r.appendChild(m);r.appendChild(b);l.appendChild(r)});
+}
+
+function startCall(id,kind){
+ var c=get(id),o=el("div","ov call"),sec=0,on=0,t1,t2,iv;
+ var av=avatar(c);av.classList.add("big");av.textContent=ini(c.n);
+ var st=el("p",null,"Calling…"),bar=el("div","cbar");
+ function mk(sym,lbl,fn){var b=el("button","cb",sym);b.setAttribute("aria-label",lbl);b.onclick=fn;bar.appendChild(b);return b}
+ function tg(e){e.currentTarget.classList.toggle("off")}
+ mk("🎤","Mute",tg);mk("🔊","Speaker",tg);if(kind==="video")mk("📷","Camera off",tg);
+ function finish(){clearTimeout(t1);clearTimeout(t2);clearInterval(iv);o.remove();
+  CALLS.unshift({id:id,dir:"out",miss:0,kind:kind,when:"Today, "+now(),dur:on?fmt(sec):""});if(tab==="calls")drawSide()}
+ var en=mk("End","End call",finish);en.classList.add("end");
+ t1=setTimeout(function(){st.textContent="Ringing…"},1200);
+ t2=setTimeout(function(){on=1;st.textContent="00:00";iv=setInterval(function(){sec++;st.textContent=fmt(sec)},1000)},3200);
+ if(kind==="video")o.appendChild(el("div","self","You"));
+ o.appendChild(av);o.appendChild(el("h2",null,c.n));o.appendChild(st);o.appendChild(bar);
+ o.appendChild(el("small",null,"Demo only: no audio or video is sent"));
+ document.body.appendChild(o);
+}
+var me={name:"Tumelo Molefe",phone:"+267 71 234 000",about:"Hey there! I am using Puo Chat.",dp:null};
+var priv={seen:"My contacts",photo:"My contacts",about:"My contacts",receipts:true},notif={msg:true,sound:true,preview:true},theme="System";
+function applyTheme(){var r=document.documentElement;if(theme==="System")r.removeAttribute("data-theme");else r.setAttribute("data-theme",theme.toLowerCase())}
+function myAv(sz){var a=el("div","av",ini(me.name));a.style.background="#14202B";
+ if(sz){a.style.width=a.style.height=sz+"px";a.style.fontSize=(sz/3)+"px"}
+ if(me.dp){a.textContent="";a.style.background="center/cover url('"+me.dp+"')"}return a}
+function panel(title,build){
+ var o=el("div","ov panel"),h=el("div","ph"),b=el("button","ic sq","‹"),body=el("div","pb");
+ b.setAttribute("aria-label","Back");b.onclick=function(){o.remove();drawSide()};
+ h.appendChild(b);h.appendChild(el("b",null,title));build(body,o);o.appendChild(h);o.appendChild(body);document.body.appendChild(o);
+}
+function fld(body,label,inp){var w=el("label","fld");w.appendChild(el("span",null,label));w.appendChild(inp);body.appendChild(w)}
+function toggle(body,label,obj,key){
+ var b=el("button","tgl");b.setAttribute("role","switch");b.setAttribute("aria-checked",obj[key]);
+ b.appendChild(el("span",null,label));b.appendChild(el("i"));
+ b.onclick=function(){obj[key]=!obj[key];b.setAttribute("aria-checked",obj[key])};body.appendChild(b)}
+function choose(body,label,opts,val,cb){
+ var s=el("select");opts.forEach(function(x){var op=el("option",null,x);op.value=x;if(x===val)op.selected=true;s.appendChild(op)});
+ s.onchange=function(){cb(s.value)};fld(body,label,s)}
+function srow(l,icon,title,sub,fn){
+ var r=el("button","row"),a=el("div","av",icon),m=el("div","meta");a.style.background="var(--chip)";
+ m.appendChild(el("b",null,title));m.appendChild(el("p",null,sub));r.appendChild(a);r.appendChild(m);r.onclick=fn;l.appendChild(r)}
+
+function drawSettings(){
+ var l=$("#list");l.textContent="";
+ var pr=el("button","row"),m=el("div","meta");m.appendChild(el("b",null,me.name));m.appendChild(el("p",null,me.about));
+ pr.appendChild(myAv(56));pr.appendChild(m);pr.onclick=profile;l.appendChild(pr);
+ srow(l,"🔒","Privacy","Last seen, profile photo, about, read receipts",privacyP);
+ srow(l,"💬","Chats","Theme: "+theme,chatsP);
+ srow(l,"🔔","Notifications","Message and sound alerts",notifP);
+ srow(l,"🌍","Language",lang==="tn"?"Setswana":"English",langP);
+ srow(l,"ℹ️","Help and about","Puo Chat 1.0",aboutP);
+}
+
+function profile(){
+ panel("Profile",function(body){
+  var dp=myAv(120),f=el("input");dp.style.margin="0 auto 10px";f.type="file";f.accept="image/*";f.hidden=true;
+  function setDp(){var n=myAv(120);n.style.margin="0 auto 10px";dp.replaceWith(n);dp=n}
+  f.onchange=function(){var file=f.files[0];if(!file)return;var r=new FileReader();r.onload=function(){me.dp=r.result;setDp()};r.readAsDataURL(file)};
+  var row=el("div"),ch=el("button","qa","Change photo"),rm=el("button","qa","Remove photo");
+  row.style.cssText="display:flex;gap:8px;justify-content:center;margin-bottom:20px";
+  ch.onclick=function(){f.click()};rm.onclick=function(){me.dp=null;setDp()};
+  row.appendChild(ch);row.appendChild(rm);
+  var nm=el("input"),ab=el("input"),ph=el("input");
+  nm.value=me.name;nm.maxLength=25;ab.value=me.about;ab.maxLength=80;ph.value=me.phone;ph.type="tel";
+  var qs=el("div","qs");["Available","At school","At work","Busy","In a meeting","Battery about to die"].forEach(function(x){var b=el("button","qa",x);b.onclick=function(){ab.value=x};qs.appendChild(b)});
+  var er=el("p","err"),sv=el("button","save","Save");
+  sv.onclick=function(){
+   if(!nm.value.trim()){er.textContent="Enter your name.";return}
+   if(!/^\+267\s?\d{2}\s?\d{3}\s?\d{3}$/.test(ph.value.trim())){er.textContent="Use a Botswana number like +267 71 234 567.";return}
+   me.name=nm.value.trim();me.about=ab.value.trim()||"Available";me.phone=ph.value.trim();drawSide();er.textContent="";sv.textContent="Saved ✓"};
+  body.appendChild(dp);body.appendChild(f);body.appendChild(row);fld(body,"Name",nm);fld(body,"About",ab);body.appendChild(qs);fld(body,"Phone number",ph);body.appendChild(er);body.appendChild(sv);
+ });
+}
+function privacyP(){panel("Privacy",function(b){
+ var o=["Everyone","My contacts","Nobody"];
+ choose(b,"Who can see my last seen",o,priv.seen,function(v){priv.seen=v});
+ choose(b,"Who can see my profile photo",o,priv.photo,function(v){priv.photo=v});
+ choose(b,"Who can see my about",o,priv.about,function(v){priv.about=v});
+ toggle(b,"Read receipts (double ticks)",priv,"receipts");
+ b.appendChild(el("p",null,"Turn read receipts off and your sent messages show one tick."))})}
+function chatsP(){panel("Chats",function(b){choose(b,"Theme",["System","Light","Dark"],theme,function(v){theme=v;applyTheme()})})}
+function notifP(){panel("Notifications",function(b){toggle(b,"Message notifications",notif,"msg");toggle(b,"Sounds",notif,"sound");toggle(b,"Show message previews",notif,"preview")})}
+function langP(){panel("Language",function(b){choose(b,"App language",["English","Setswana"],lang==="tn"?"Setswana":"English",function(v){setLang(v==="Setswana"?"tn":"en")})})}
+function aboutP(){panel("Help and about",function(b){b.appendChild(el("p",null,"Puo Chat 1.0 is a student prototype of a messaging app for Botswana, with chats, status, calls and settings. Replies, calls and AI features are simulated in this demo. Sending real messages between people needs a server and accounts."))})}
+TABS.forEach(function(k){$("#tab-"+k).onclick=function(){setTab(k)}});
+labelTabs();
+$("#en").onclick=function(){setLang("en")};
+$("#tn").onclick=function(){setLang("tn")};
+drawList();
+</script>
+</body>
+</html>
